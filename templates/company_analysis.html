@@ -1,0 +1,820 @@
+{% extends 'base.html' %}
+
+{% block title %}Phân Tích Công Ty - Phân Tích Tài Chính{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<style>
+    .financial-tabs {
+        margin-top: 20px;
+    }
+    .year-selector {
+        margin-bottom: 15px;
+    }
+    .statement-container {
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        margin-top: 15px;
+    }
+    .statement-heading {
+        font-weight: bold;
+        color: #0056b3;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .no-data-message {
+        padding: 30px;
+        text-align: center;
+        color: #6c757d;
+        font-style: italic;
+    }
+    .statement-table {
+        width: 100%;
+        margin-bottom: 0;
+    }
+    .statement-table th {
+        background-color: #e9ecef;
+    }
+    .statement-value {
+        text-align: right;
+        font-family: monospace;
+    }
+    .year-pill {
+        cursor: pointer;
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
+    .year-pill.active {
+        background-color: #0056b3;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Phân Tích Công Ty</h2>
+                <p class="lead text-center">
+                    Phân tích chi tiết tình hình tài chính của doanh nghiệp niêm yết trên thị trường chứng khoán Việt
+                    Nam.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Company Selection -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Tìm Kiếm Công Ty</h5>
+            </div>
+            <div class="card-body">
+                <form id="companySearchForm" method="get" action="/company_analysis">
+                    <div class="row">
+                        <div class="col-md-10">
+                            <input type="text" class="form-control" id="companySearch" name="code"
+                                placeholder="Nhập mã cổ phiếu (VD: VNM, FPT, VCB...)"
+                                value="{{ selected_company_code if selected_company_code else '' }}">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Tìm Kiếm</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if selected_company_code %}
+<!-- Company Information -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Thông Tin Công Ty: {{ company_info.name }} ({{ selected_company_code }})</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <th width="40%">Tên Công Ty</th>
+                                        <td>{{ company_info.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Mã Chứng Khoán</th>
+                                        <td>{{ selected_company_code }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Sàn Niêm Yết</th>
+                                        <td>{{ company_info.exchange }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Ngành ICB - Cấp 1</th>
+                                        <td>{{ company_info.icb_level1 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Ngành ICB - Cấp 2</th>
+                                        <td>{{ company_info.icb_level2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Ngành ICB - Cấp 3</th>
+                                        <td>
+                                            {{ company_info.icb_level3 }}
+                                            <a href="/sector_analysis?sector={{ company_info.icb_level3 }}"
+                                                class="ms-2 btn btn-sm btn-outline-primary">Xem Ngành</a>
+                                        </td>
+                                    </tr>
+                                    {% if company_ranking %}
+                                    <tr>
+                                        <th>Thứ Hạng Trong Ngành</th>
+                                        <td>
+                                            {{ company_ranking.rank }} / {{ company_ranking.total }}
+                                            <small class="text-muted">(dựa trên tổng tài sản)</small>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <th>Thông Tin Mô Tả</th>
+                                        <td>
+                                            {% if company_info.profile %}
+                                            {{ company_info.profile|safe }}
+                                            {% else %}
+                                            <em>Không có thông tin mô tả</em>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Biểu đồ Tài Chính -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Doanh Thu và Lợi Nhuận Theo Thời Gian</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-center">Doanh Thu Thuần</h6>
+                        <canvas id="financialRevenueChart" height="300"></canvas>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-center">Lợi Nhuận Sau Thuế</h6>
+                        <canvas id="financialProfitChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Financial Statements By Year -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Báo Cáo Tài Chính Theo Năm</h5>
+            </div>
+            <div class="card-body">
+                <!-- Year Selector -->
+                <div class="year-selector">
+                    <h6 class="mb-3">Chọn Năm:</h6>
+                    <div class="btn-group" role="group" aria-label="Year selection">
+                        {% if available_years and available_years|length > 0 %}
+                            {% for year in available_years %}
+                            <button type="button" class="btn btn-outline-primary year-pill {% if loop.last %}active{% endif %}" 
+                                    data-year="{{ year }}">{{ year }}</button>
+                            {% endfor %}
+                        {% else %}
+                            <button type="button" class="btn btn-outline-secondary" disabled>Không có dữ liệu</button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Financial Statements Tabs -->
+                <div class="financial-tabs">
+                    <ul class="nav nav-tabs" id="financialStatementsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="balance-sheet-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#balance-sheet" type="button" role="tab" 
+                                    aria-controls="balance-sheet" aria-selected="true">Bảng Cân Đối Kế Toán</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="income-statement-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#income-statement" type="button" role="tab" 
+                                    aria-controls="income-statement" aria-selected="false">Kết Quả Kinh Doanh</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="cash-flow-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#cash-flow" type="button" role="tab" 
+                                    aria-controls="cash-flow" aria-selected="false">Lưu Chuyển Tiền Tệ</button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="financialStatementsContent">
+                        <!-- Balance Sheet Tab -->
+                        <div class="tab-pane fade show active" id="balance-sheet" role="tabpanel" aria-labelledby="balance-sheet-tab">
+                            <div class="statement-container">
+                                {% if balance_sheets and balance_sheets|length > 0 %}
+                                <div id="balance-sheet-content">
+                                    <!-- This will be populated by JavaScript -->
+                                    <div class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Đang tải...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="no-data-message">
+                                    <p>Không có dữ liệu bảng cân đối kế toán cho công ty này.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Income Statement Tab -->
+                        <div class="tab-pane fade" id="income-statement" role="tabpanel" aria-labelledby="income-statement-tab">
+                            <div class="statement-container">
+                                {% if income_statements and income_statements|length > 0 %}
+                                <div id="income-statement-content">
+                                    <!-- This will be populated by JavaScript -->
+                                    <div class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Đang tải...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="no-data-message">
+                                    <p>Không có dữ liệu kết quả kinh doanh cho công ty này.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Cash Flow Tab -->
+                        <div class="tab-pane fade" id="cash-flow" role="tabpanel" aria-labelledby="cash-flow-tab">
+                            <div class="statement-container">
+                                {% if cash_flows and cash_flows|length > 0 %}
+                                <div id="cash-flow-content">
+                                    <!-- This will be populated by JavaScript -->
+                                    <div class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Đang tải...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="no-data-message">
+                                    <p>Không có dữ liệu lưu chuyển tiền tệ cho công ty này.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- No Company Selected Message -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <h4 class="text-muted">Vui lòng nhập mã công ty để xem phân tích chi tiết</h4>
+                <p class="text-muted">Nhập mã cổ phiếu (VD: VNM, FPT, VCB...) để hiển thị phân tích tài chính của công
+                    ty đó.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<!-- Add Chart.js library explicitly -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    $(function () {
+        // Autocomplete for company search
+        $("#companySearch").autocomplete({
+            source: function (request, response) {
+                $.ajax({
+                    url: "/api/companies",
+                    dataType: "json",
+                    data: {
+                        term: request.term
+                    },
+                    success: function (data) {
+                        response(data);
+                    }
+                });
+            },
+            minLength: 1,
+            select: function (event, ui) {
+                $("#companySearch").val(ui.item.value);
+                $(this).closest("form").submit();
+            }
+        }).autocomplete("instance")._renderItem = function (ul, item) {
+            return $("<li>")
+                .append("<div>" + item.label + "</div>")
+                .appendTo(ul);
+        };
+
+        // Handle year selection
+        $(".year-pill").click(function() {
+            // Update active state
+            $(".year-pill").removeClass("active");
+            $(this).addClass("active");
+            
+            // Get the selected year
+            const selectedYear = $(this).data("year");
+            
+            // Show loading spinners
+            $("#balance-sheet-content, #income-statement-content, #cash-flow-content").html(`
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                </div>
+            `);
+            
+            // Load the financial data for the selected year
+            loadFinancialData(selectedYear);
+        });
+        
+        // Load financial data for the selected year via AJAX
+        function loadFinancialData(year) {
+            $.ajax({
+                url: "/api/financial_statements/{{ selected_company_code }}",
+                dataType: "json",
+                data: { year: year },
+                success: function(data) {
+                    // Populate balance sheet data
+                    if (data.balance_sheet) {
+                        populateBalanceSheet(data.balance_sheet);
+                    } else {
+                        $("#balance-sheet-content").html(`
+                            <div class="no-data-message">
+                                <p>Không có dữ liệu bảng cân đối kế toán cho năm ${year}.</p>
+                            </div>
+                        `);
+                    }
+                    
+                    // Populate income statement data
+                    if (data.income_statement) {
+                        populateIncomeStatement(data.income_statement);
+                    } else {
+                        $("#income-statement-content").html(`
+                            <div class="no-data-message">
+                                <p>Không có dữ liệu kết quả kinh doanh cho năm ${year}.</p>
+                            </div>
+                        `);
+                    }
+                    
+                    // Populate cash flow data
+                    if (data.cash_flow) {
+                        populateCashFlow(data.cash_flow);
+                    } else {
+                        $("#cash-flow-content").html(`
+                            <div class="no-data-message">
+                                <p>Không có dữ liệu lưu chuyển tiền tệ cho năm ${year}.</p>
+                            </div>
+                        `);
+                    }
+                },
+                error: function() {
+                    $("#balance-sheet-content, #income-statement-content, #cash-flow-content").html(`
+                        <div class="no-data-message">
+                            <p>Đã xảy ra lỗi khi tải dữ liệu. Vui lòng thử lại sau.</p>
+                        </div>
+                    `);
+                }
+            });
+        }
+        
+        // Format number with commas as thousands separator
+        function formatNumber(num) {
+            if (num === undefined || num === null) return "-";
+            return num.toLocaleString('vi-VN');
+        }
+        
+        // Populate balance sheet data
+        function populateBalanceSheet(data) {
+            let html = `
+                <h4 class="statement-heading">Bảng Cân Đối Kế Toán</h4>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped statement-table">
+                        <thead>
+                            <tr>
+                                <th>Chỉ Tiêu</th>
+                                <th class="text-right">Giá Trị (VNĐ)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="2" class="fw-bold bg-light">A. TÀI SẢN</td>
+                            </tr>
+                            <tr>
+                                <td>I. Tài sản ngắn hạn</td>
+                                <td class="statement-value">${formatNumber(data.current_assets)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;1. Tiền và tương đương tiền</td>
+                                <td class="statement-value">${formatNumber(data.cash_and_equivalents)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;2. Các khoản đầu tư tài chính ngắn hạn</td>
+                                <td class="statement-value">${formatNumber(data.short_term_investments)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;3. Các khoản phải thu ngắn hạn</td>
+                                <td class="statement-value">${formatNumber(data.short_term_receivables)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;4. Hàng tồn kho</td>
+                                <td class="statement-value">${formatNumber(data.inventory)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;5. Tài sản ngắn hạn khác</td>
+                                <td class="statement-value">${formatNumber(data.other_current_assets)}</td>
+                            </tr>
+                            <tr>
+                                <td>II. Tài sản dài hạn</td>
+                                <td class="statement-value">${formatNumber(data.non_current_assets)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;1. Tài sản cố định</td>
+                                <td class="statement-value">${formatNumber(data.fixed_assets)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;2. Đầu tư tài chính dài hạn</td>
+                                <td class="statement-value">${formatNumber(data.long_term_investments)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;3. Tài sản dài hạn khác</td>
+                                <td class="statement-value">${formatNumber(data.other_non_current_assets)}</td>
+                            </tr>
+                            <tr class="fw-bold">
+                                <td>TỔNG CỘNG TÀI SẢN</td>
+                                <td class="statement-value">${formatNumber(data.total_assets)}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="fw-bold bg-light">B. NGUỒN VỐN</td>
+                            </tr>
+                            <tr>
+                                <td>I. Nợ phải trả</td>
+                                <td class="statement-value">${formatNumber(data.liabilities)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;1. Nợ ngắn hạn</td>
+                                <td class="statement-value">${formatNumber(data.current_liabilities)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;2. Nợ dài hạn</td>
+                                <td class="statement-value">${formatNumber(data.non_current_liabilities)}</td>
+                            </tr>
+                            <tr>
+                                <td>II. Vốn chủ sở hữu</td>
+                                <td class="statement-value">${formatNumber(data.equity)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;1. Vốn góp của chủ sở hữu</td>
+                                <td class="statement-value">${formatNumber(data.owner_equity)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;2. Lợi nhuận sau thuế chưa phân phối</td>
+                                <td class="statement-value">${formatNumber(data.retained_earnings)}</td>
+                            </tr>
+                            <tr class="fw-bold">
+                                <td>TỔNG CỘNG NGUỒN VỐN</td>
+                                <td class="statement-value">${formatNumber(data.total_liabilities_and_equity)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            $("#balance-sheet-content").html(html);
+        }
+        
+        // Populate income statement data
+        function populateIncomeStatement(data) {
+            let html = `
+                <h4 class="statement-heading">Báo Cáo Kết Quả Kinh Doanh</h4>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped statement-table">
+                        <thead>
+                            <tr>
+                                <th>Chỉ Tiêu</th>
+                                <th class="text-right">Giá Trị (VNĐ)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1. Doanh thu bán hàng và cung cấp dịch vụ</td>
+                                <td class="statement-value">${formatNumber(data.total_revenue)}</td>
+                            </tr>
+                            <tr>
+                                <td>2. Các khoản giảm trừ doanh thu</td>
+                                <td class="statement-value">${formatNumber(data.revenue_deductions)}</td>
+                            </tr>
+                            <tr>
+                                <td>3. Doanh thu thuần</td>
+                                <td class="statement-value">${formatNumber(data.net_revenue)}</td>
+                            </tr>
+                            <tr>
+                                <td>4. Giá vốn hàng bán</td>
+                                <td class="statement-value">${formatNumber(data.cost_of_goods_sold)}</td>
+                            </tr>
+                            <tr>
+                                <td>5. Lợi nhuận gộp</td>
+                                <td class="statement-value">${formatNumber(data.gross_profit)}</td>
+                            </tr>
+                            <tr>
+                                <td>6. Doanh thu hoạt động tài chính</td>
+                                <td class="statement-value">${formatNumber(data.financial_income)}</td>
+                            </tr>
+                            <tr>
+                                <td>7. Chi phí tài chính</td>
+                                <td class="statement-value">${formatNumber(data.financial_expenses)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;- Trong đó: Chi phí lãi vay</td>
+                                <td class="statement-value">${formatNumber(data.interest_expense)}</td>
+                            </tr>
+                            <tr>
+                                <td>8. Chi phí bán hàng</td>
+                                <td class="statement-value">${formatNumber(data.selling_expenses)}</td>
+                            </tr>
+                            <tr>
+                                <td>9. Chi phí quản lý doanh nghiệp</td>
+                                <td class="statement-value">${formatNumber(data.administrative_expenses)}</td>
+                            </tr>
+                            <tr>
+                                <td>10. Lợi nhuận thuần từ hoạt động kinh doanh</td>
+                                <td class="statement-value">${formatNumber(data.operating_profit)}</td>
+                            </tr>
+                            <tr>
+                                <td>11. Thu nhập khác</td>
+                                <td class="statement-value">${formatNumber(data.other_income)}</td>
+                            </tr>
+                            <tr>
+                                <td>12. Chi phí khác</td>
+                                <td class="statement-value">${formatNumber(data.other_expenses)}</td>
+                            </tr>
+                            <tr>
+                                <td>13. Lợi nhuận khác</td>
+                                <td class="statement-value">${formatNumber(data.other_profit)}</td>
+                            </tr>
+                            <tr>
+                                <td>14. Tổng lợi nhuận kế toán trước thuế</td>
+                                <td class="statement-value">${formatNumber(data.profit_before_tax)}</td>
+                            </tr>
+                            <tr>
+                                <td>15. Chi phí thuế TNDN hiện hành</td>
+                                <td class="statement-value">${formatNumber(data.current_tax)}</td>
+                            </tr>
+                            <tr>
+                                <td>16. Chi phí thuế TNDN hoãn lại</td>
+                                <td class="statement-value">${formatNumber(data.deferred_tax)}</td>
+                            </tr>
+                            <tr class="fw-bold">
+                                <td>17. Lợi nhuận sau thuế thu nhập doanh nghiệp</td>
+                                <td class="statement-value">${formatNumber(data.profit_after_tax)}</td>
+                            </tr>
+                            <tr>
+                                <td>18. Lãi cơ bản trên cổ phiếu (VNĐ)</td>
+                                <td class="statement-value">${formatNumber(data.basic_earnings_per_share)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            $("#income-statement-content").html(html);
+        }
+        
+        // Populate cash flow statement data
+        function populateCashFlow(data) {
+            let html = `
+                <h4 class="statement-heading">Báo Cáo Lưu Chuyển Tiền Tệ</h4>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped statement-table">
+                        <thead>
+                            <tr>
+                                <th>Chỉ Tiêu</th>
+                                <th class="text-right">Giá Trị (VNĐ)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="2" class="fw-bold bg-light">I. Lưu chuyển tiền từ hoạt động kinh doanh</td>
+                            </tr>
+                            <tr>
+                                <td>1. Lợi nhuận trước thuế</td>
+                                <td class="statement-value">${formatNumber(data.profit_before_tax)}</td>
+                            </tr>
+                            <tr>
+                                <td>2. Điều chỉnh cho các khoản</td>
+                                <td class="statement-value">${formatNumber(data.adjustments)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;- Khấu hao TSCĐ</td>
+                                <td class="statement-value">${formatNumber(data.depreciation)}</td>
+                            </tr>
+                            <tr>
+                                <td>&nbsp;&nbsp;&nbsp;- Chi phí lãi vay</td>
+                                <td class="statement-value">${formatNumber(data.interest_expense)}</td>
+                            </tr>
+                            <tr>
+                                <td>3. Lưu chuyển tiền thuần từ hoạt động kinh doanh</td>
+                                <td class="statement-value">${formatNumber(data.net_cash_from_operating)}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="fw-bold bg-light">II. Lưu chuyển tiền từ hoạt động đầu tư</td>
+                            </tr>
+                            <tr>
+                                <td>1. Tiền chi để mua sắm, xây dựng TSCĐ</td>
+                                <td class="statement-value">${formatNumber(data.purchase_of_fixed_assets)}</td>
+                            </tr>
+                            <tr>
+                                <td>2. Tiền thu từ thanh lý, nhượng bán TSCĐ</td>
+                                <td class="statement-value">${formatNumber(data.proceeds_from_disposals)}</td>
+                            </tr>
+                            <tr>
+                                <td>3. Tiền chi cho vay</td>
+                                <td class="statement-value">${formatNumber(data.loans_to_other_entities)}</td>
+                            </tr>
+                            <tr>
+                                <td>4. Tiền thu hồi cho vay</td>
+                                <td class="statement-value">${formatNumber(data.collections_from_loans)}</td>
+                            </tr>
+                            <tr>
+                                <td>5. Lưu chuyển tiền thuần từ hoạt động đầu tư</td>
+                                <td class="statement-value">${formatNumber(data.net_cash_from_investing)}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="fw-bold bg-light">III. Lưu chuyển tiền từ hoạt động tài chính</td>
+                            </tr>
+                            <tr>
+                                <td>1. Tiền thu từ phát hành cổ phiếu</td>
+                                <td class="statement-value">${formatNumber(data.proceeds_from_issuing_shares)}</td>
+                            </tr>
+                            <tr>
+                                <td>2. Tiền vay ngắn hạn, dài hạn nhận được</td>
+                                <td class="statement-value">${formatNumber(data.proceeds_from_borrowings)}</td>
+                            </tr>
+                            <tr>
+                                <td>3. Tiền chi trả nợ gốc vay</td>
+                                <td class="statement-value">${formatNumber(data.repayments_of_borrowings)}</td>
+                            </tr>
+                            <tr>
+                                <td>4. Cổ tức, lợi nhuận đã trả</td>
+                                <td class="statement-value">${formatNumber(data.dividends_paid)}</td>
+                            </tr>
+                            <tr>
+                                <td>5. Lưu chuyển tiền thuần từ hoạt động tài chính</td>
+                                <td class="statement-value">${formatNumber(data.net_cash_from_financing)}</td>
+                            </tr>
+                            <tr class="fw-bold">
+                                <td>Lưu chuyển tiền thuần trong kỳ</td>
+                                <td class="statement-value">${formatNumber(data.net_cash_flow)}</td>
+                            </tr>
+                            <tr>
+                                <td>Tiền và tương đương tiền đầu kỳ</td>
+                                <td class="statement-value">${formatNumber(data.cash_beginning)}</td>
+                            </tr>
+                            <tr>
+                                <td>Tiền và tương đương tiền cuối kỳ</td>
+                                <td class="statement-value">${formatNumber(data.cash_ending)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            $("#cash-flow-content").html(html);
+        }
+        
+        // Load financial data for the initially selected year (the most recent one)
+        if ($(".year-pill.active").length > 0) {
+            const initialYear = $(".year-pill.active").data("year");
+            loadFinancialData(initialYear);
+        }
+    });
+</script>
+
+{% if selected_company_code and financial_revenue_series and financial_profit_series %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // For debugging
+    console.log("Revenue data:", {{ financial_revenue_series|safe }});
+    console.log("Profit data:", {{ financial_profit_series|safe }});
+    
+    try {
+        // Biểu đồ DOANH THU
+        const revenueData = JSON.parse('{{ financial_revenue_series|safe }}');
+        const ctxRevenue = document.getElementById('financialRevenueChart').getContext('2d');
+        new Chart(ctxRevenue, {
+            type: 'line',
+            data: {
+                labels: revenueData.labels,
+                datasets: [
+                    {
+                        label: 'Doanh Thu Thuần',
+                        data: revenueData.revenue,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Tỷ VNĐ'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Năm'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Biểu đồ LỢI NHUẬN
+        const profitData = JSON.parse('{{ financial_profit_series|safe }}');
+        const ctxProfit = document.getElementById('financialProfitChart').getContext('2d');
+        new Chart(ctxProfit, {
+            type: 'line',
+            data: {
+                labels: profitData.labels,
+                datasets: [
+                    {
+                        label: 'Lợi Nhuận',
+                        data: profitData.profit,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Tỷ VNĐ'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Năm'
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Error creating charts:", error);
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

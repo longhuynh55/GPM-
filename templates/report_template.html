@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo Cáo Phân Tích Tài Chính - {{ company_name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+            @top-center {
+                content: "Báo Cáo Phân Tích Tài Chính - {{ company_code }}";
+                font-size: 9pt;
+                color: #777;
+            }
+            @bottom-center {
+                content: "Trang " counter(page) " / " counter(pages);
+                font-size: 9pt;
+                color: #777;
+            }
+            @bottom-right {
+                content: "{{ report_date }}";
+                font-size: 9pt;
+                color: #777;
+            }
+        }
+        
+        @font-face {
+            font-family: 'Roboto';
+            src: url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        }
+        
+        body {
+            font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            font-size: 12px;
+            background-color: white;
+        }
+        
+        .container {
+            max-width: 1170px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .report-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 20px;
+        }
+        
+        .report-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0056b3;
+            margin-bottom: 10px;
+        }
+        
+        .report-subtitle {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        
+        .report-date {
+            font-size: 14px;
+            color: #777;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0056b3;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        
+        .sub-section {
+            margin-bottom: 20px;
+        }
+        
+        .sub-section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0056b3;
+            margin-bottom: 15px;
+        }
+        
+        .sub-sub-section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #0056b3;
+            margin-bottom: 10px;
+            margin-top: 15px;
+            border-bottom: 1px dashed #ddd;
+            padding-bottom: 5px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f0f6ff;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .bg-primary {
+            background-color: #2a75c0;
+            color: white;
+        }
+        
+        .bg-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .chart-container {
+            width: 100%;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .chart-image {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .comparison-table th:first-child,
+        .comparison-table td:first-child {
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        .summary-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0056b3;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #0056b3;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            color: #0056b3;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+        }
+        
+        .positive-change {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .negative-change {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .highlight {
+            background-color: #fffde7;
+            padding: 3px;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        /* Thêm chú thích giải thích các chỉ số */
+        .ratio-explanation {
+            font-size: 10px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        /* Khung viền cho biểu đồ */
+        .chart-frame {
+            border: 1px solid #ddd;
+            padding: 15px;
+            background-color: white;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #0056b3;
+        }
+        
+        /* Trường hợp không có dữ liệu */
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border: 1px dashed #ddd;
+            color: #6c757d;
+            margin: 20px 0;
+        }
+        
+        /* Watermark cho báo cáo */
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            color: rgba(0, 0, 0, 0.03);
+            font-size: 120px;
+            font-weight: bold;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* Fix to ensure WeasyPrint renders grid layout correctly */
+        @media print {
+            .info-grid {
+                display: table;
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 10px;
+            }
+            
+            .info-grid .info-item {
+                display: table-cell;
+                width: 45%;
+            }
+            
+            .page-break {
+                page-break-before: always;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+            }
+            
+            /* Force background colors to print */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="watermark">{{ company_code }}</div>
+    
+    <div class="container">
+        <!-- Phần Header -->
+        <div class="report-header">
+            <div class="report-title">BÁO CÁO PHÂN TÍCH TÀI CHÍNH</div>
+            <div class="report-subtitle">{{ company_name }} ({{ company_code }})</div>
+            <div class="report-date">Ngày báo cáo: {{ report_date }}</div>
+        </div>
+        
+        <!-- Phần 1: Thông Tin Công Ty -->
+        <div class="section">
+            <div class="section-title">1. THÔNG TIN CÔNG TY</div>
+            
+            <div style="margin-bottom: 20px;">
+                <table>
+                    <tr>
+                        <th width="30%">Mã Chứng Khoán</th>
+                        <td width="70%">{{ company_code }}</td>
+                    </tr>
+                    <tr>
+                        <th>Tên Công Ty</th>
+                        <td>{{ company_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Sàn Niêm Yết</th>
+                        <td>{{ exchange }}</td>
+                    </tr>
+                    <tr>
+                        <th>Ngành ICB - Cấp 1</th>
+                        <td>{{ industry_level1 }}</td>
+                    </tr>
+                    <tr>
+                        <th>Ngành ICB - Cấp 2</th>
+                        <td>{{ industry_level2 }}</td>
+                    </tr>
+                    <tr>
+                        <th>Ngành ICB - Cấp 3</th>
+                        <td>{{ industry_level3 }}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="summary-box">
+                <div class="summary-title">Tóm Tắt Công Ty</div>
+                <p>
+                    Công ty <strong>{{ company_name }}</strong> ({{ company_code }}) được niêm yết trên sàn {{ exchange }} và hoạt động trong lĩnh vực {{ industry_level1 }}.
+                    Báo cáo này cung cấp phân tích tài chính của công ty dựa trên dữ liệu từ báo cáo tài chính
+                    {% if years and years|length > 0 %}từ năm {{ years[0] }} đến {{ years[-1] }}{% else %}mà chúng tôi có{% endif %}.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Phần 2: So Sánh Với Trung Bình Ngành -->
+        <div class="section">
+            <div class="section-title">2. SO SÁNH VỚI TRUNG BÌNH NGÀNH</div>
+            
+            <div class="sub-section">
+                <div class="sub-section-title">2.1. Bảng So Sánh Chỉ Số Tài Chính</div>
+                
+                <!-- 2.1.1 Profitability Ratios -->
+                <div class="sub-sub-section-title">2.1.1 Chỉ Số Sinh Lời</div>
+                {% if company_metrics and sector_avg %}
+                <table class="comparison-table">
+                    <thead>
+                        <tr class="bg-primary">
+                            <th>Chỉ Số</th>
+                            <th>{{ company_code }}</th>
+                            <th>Trung Bình Ngành</th>
+                            <th>So Sánh</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ROA - Tỷ suất sinh lời trên tài sản (%)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('ROA (%)', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average ROA', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('ROA (%)', 0) - sector_avg.get('Average ROA', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>ROE - Tỷ suất sinh lời trên vốn (%)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('ROE (%)', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average ROE', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('ROE (%)', 0) - sector_avg.get('Average ROE', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>ROS - Tỷ suất sinh lời trên doanh thu (%)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('ROS (%)', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average ROS', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('ROS (%)', 0) - sector_avg.get('Average ROS', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>EBIT Margin - Tỷ suất lợi nhuận trước lãi vay và thuế (%)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('EBIT Margin (%)', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average EBIT Margin', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('EBIT Margin (%)', 0) - sector_avg.get('Average EBIT Margin', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>EBITDA Margin - Tỷ suất lợi nhuận trước khấu hao, lãi vay và thuế (%)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('EBITDA Margin (%)', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average EBITDA Margin', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('EBITDA Margin (%)', 0) - sector_avg.get('Average EBITDA Margin', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Gross Profit Margin - Tỷ suất lợi nhuận gộp (%)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('Gross Profit Margin (%)', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average Gross Profit Margin', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('Gross Profit Margin (%)', 0) - sector_avg.get('Average Gross Profit Margin', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>BEP - Khả năng sinh lời cơ bản (%)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('BEP (%)', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average BEP', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('BEP (%)', 0) - sector_avg.get('Average BEP', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- 2.1.2 Growth Ratios -->
+                <div class="sub-sub-section-title">2.1.2 Chỉ Số Tăng Trưởng</div>
+                <table class="comparison-table">
+                    <thead>
+                        <tr class="bg-primary">
+                            <th>Chỉ Số</th>
+                            <th>{{ company_code }}</th>
+                            <th>Trung Bình Ngành</th>
+                            <th>So Sánh</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Tăng trưởng doanh thu (%)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('Revenue Growth (%)', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average Revenue Growth', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('Revenue Growth (%)', 0) - sector_avg.get('Average Revenue Growth', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Tăng trưởng lợi nhuận ròng (%)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('Net Income Growth (%)', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average Net Income Growth', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('Net Income Growth (%)', 0) - sector_avg.get('Average Net Income Growth', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Tăng trưởng tổng tài sản (%)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('Total Assets Growth (%)', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average Total Assets Growth', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('Total Assets Growth (%)', 0) - sector_avg.get('Average Total Assets Growth', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- 2.1.3 Liquidity Ratios -->
+                <div class="sub-sub-section-title">2.1.3 Chỉ Số Thanh Khoản</div>
+                <table class="comparison-table">
+                    <thead>
+                        <tr class="bg-primary">
+                            <th>Chỉ Số</th>
+                            <th>{{ company_code }}</th>
+                            <th>Trung Bình Ngành</th>
+                            <th>So Sánh</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Tỷ số thanh toán hiện hành (lần)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('Current Ratio', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average Current Ratio', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('Current Ratio', 0) - sector_avg.get('Average Current Ratio', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Tỷ số thanh toán nhanh (lần)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('Quick Ratio', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average Quick Ratio', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('Quick Ratio', 0) - sector_avg.get('Average Quick Ratio', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Khả năng thanh toán lãi vay (lần)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('Interest Coverage Ratio', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average Interest Coverage Ratio', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('Interest Coverage Ratio', 0) - sector_avg.get('Average Interest Coverage Ratio', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- 2.1.4 Leverage Ratios -->
+                <div class="sub-sub-section-title">2.1.4 Chỉ Số Đòn Bẩy</div>
+                <table class="comparison-table">
+                    <thead>
+                        <tr class="bg-primary">
+                            <th>Chỉ Số</th>
+                            <th>{{ company_code }}</th>
+                            <th>Trung Bình Ngành</th>
+                            <th>So Sánh</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Tỷ số Nợ/Tổng tài sản (%)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('D/A (%)', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average D/A Ratio', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('D/A (%)', 0) - sector_avg.get('Average D/A Ratio', 0) %}
+                                {% if diff < 0 %}
+                                <span class="positive-change">{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff > 0 %}
+                                <span class="negative-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Tỷ số Nợ/Vốn chủ sở hữu (%)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('D/E (%)', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average D/E Ratio', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('D/E (%)', 0) - sector_avg.get('Average D/E Ratio', 0) %}
+                                {% if diff < 0 %}
+                                <span class="positive-change">{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff > 0 %}
+                                <span class="negative-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Tỷ số Vốn chủ sở hữu/Tổng tài sản (%)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('E/A (%)', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average E/A Ratio', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('E/A (%)', 0) - sector_avg.get('Average E/A Ratio', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- 2.1.5 Efficiency Ratios -->
+                <div class="sub-sub-section-title">2.1.5 Chỉ Số Hiệu Quả Hoạt Động</div>
+                <table class="comparison-table">
+                    <thead>
+                        <tr class="bg-primary">
+                            <th>Chỉ Số</th>
+                            <th>{{ company_code }}</th>
+                            <th>Trung Bình Ngành</th>
+                            <th>So Sánh</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Vòng quay tổng tài sản (lần)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('Total Asset Turnover', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average Total Asset Turnover', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('Total Asset Turnover', 0) - sector_avg.get('Average Total Asset Turnover', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Vòng quay hàng tồn kho (lần)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('Inventory Turnover', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average Inventory Turnover', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('Inventory Turnover', 0) - sector_avg.get('Average Inventory Turnover', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Vòng quay khoản phải thu (lần)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('Accounts Receivable Turnover', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average Accounts Receivable Turnover', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('Accounts Receivable Turnover', 0) - sector_avg.get('Average Accounts Receivable Turnover', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Vòng quay vốn lưu động (lần)</td>
+                            <td class="text-center">{{ "%.2f"|format(company_metrics.get('Working Capital Turnover', 0)) }}</td>
+                            <td class="text-center">{{ "%.2f"|format(sector_avg.get('Average Working Capital Turnover', 0)) }}</td>
+                            <td class="text-center">
+                                {% set diff = company_metrics.get('Working Capital Turnover', 0) - sector_avg.get('Average Working Capital Turnover', 0) %}
+                                {% if diff > 0 %}
+                                <span class="positive-change">+{{ "%.2f"|format(diff) }}</span>
+                                {% elif diff < 0 %}
+                                <span class="negative-change">{{ "%.2f"|format(diff) }}</span>
+                                {% else %}
+                                0.00
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="ratio-explanation">
+                    <p><strong>Chú thích:</strong> Giá trị so sánh màu xanh biểu thị hiệu suất tốt hơn trung bình ngành, giá trị màu đỏ biểu thị hiệu suất kém hơn trung bình ngành.</p>
+                </div>
+                {% else %}
+                <div class="no-data">
+                    <i>Không có dữ liệu so sánh với trung bình ngành.</i>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- This replaces the existing section 2.2 in report_template.html -->
+            <div class="sub-section">
+                <div class="sub-section-title">2.2. Biểu Đồ So Sánh</div>
+                
+                <!-- 2.2.1 Profitability Ratios Chart -->
+                <div class="sub-sub-section-title">2.2.1 Biểu Đồ Chỉ Số Sinh Lời</div>
+                {% if profitability_chart %}
+                <div class="chart-frame">
+                    <div class="chart-title">So sánh chỉ số sinh lời với trung bình ngành</div>
+                    <div class="chart-container">
+                        <img src="data:image/png;base64,{{ profitability_chart }}" alt="So sánh chỉ số sinh lời" class="chart-image">
+                    </div>
+                    <div class="chart-description">
+                        <p class="small text-muted">Biểu đồ thể hiện sự so sánh về ROA, ROE, ROS, EBIT Margin, EBITDA Margin và Gross Profit Margin giữa công ty và trung bình ngành.</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="no-data">
+                    <i>Không có dữ liệu để hiển thị biểu đồ so sánh chỉ số sinh lời.</i>
+                </div>
+                {% endif %}
+                
+                <!-- 2.2.2 Growth Ratios Chart -->
+                <div class="sub-sub-section-title">2.2.2 Biểu Đồ Chỉ Số Tăng Trưởng</div>
+                {% if growth_chart %}
+                <div class="chart-frame">
+                    <div class="chart-title">So sánh chỉ số tăng trưởng với trung bình ngành</div>
+                    <div class="chart-container">
+                        <img src="data:image/png;base64,{{ growth_chart }}" alt="So sánh chỉ số tăng trưởng" class="chart-image">
+                    </div>
+                    <div class="chart-description">
+                        <p class="small text-muted">Biểu đồ thể hiện sự so sánh về tăng trưởng doanh thu, tăng trưởng lợi nhuận và tăng trưởng tổng tài sản giữa công ty và trung bình ngành.</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="no-data">
+                    <i>Không có dữ liệu để hiển thị biểu đồ so sánh chỉ số tăng trưởng.</i>
+                </div>
+                {% endif %}
+                
+                <!-- 2.2.3 Liquidity Ratios Chart -->
+                <div class="sub-sub-section-title">2.2.3 Biểu Đồ Chỉ Số Thanh Khoản</div>
+                {% if liquidity_chart %}
+                <div class="chart-frame">
+                    <div class="chart-title">So sánh chỉ số thanh khoản với trung bình ngành</div>
+                    <div class="chart-container">
+                        <img src="data:image/png;base64,{{ liquidity_chart }}" alt="So sánh chỉ số thanh khoản" class="chart-image">
+                    </div>
+                    <div class="chart-description">
+                        <p class="small text-muted">Biểu đồ thể hiện sự so sánh về tỷ số thanh toán hiện hành, tỷ số thanh toán nhanh và khả năng thanh toán lãi vay giữa công ty và trung bình ngành.</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="no-data">
+                    <i>Không có dữ liệu để hiển thị biểu đồ so sánh chỉ số thanh khoản.</i>
+                </div>
+                {% endif %}
+                
+                <!-- 2.2.4 Leverage Ratios Chart -->
+                <div class="sub-sub-section-title">2.2.4 Biểu Đồ Chỉ Số Đòn Bẩy</div>
+                {% if leverage_chart %}
+                <div class="chart-frame">
+                    <div class="chart-title">So sánh chỉ số đòn bẩy với trung bình ngành</div>
+                    <div class="chart-container">
+                        <img src="data:image/png;base64,{{ leverage_chart }}" alt="So sánh chỉ số đòn bẩy" class="chart-image">
+                    </div>
+                    <div class="chart-description">
+                        <p class="small text-muted">Biểu đồ thể hiện sự so sánh về tỷ lệ Nợ/Tài sản, tỷ lệ Nợ/Vốn chủ sở hữu và tỷ lệ Vốn chủ sở hữu/Tổng tài sản giữa công ty và trung bình ngành.</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="no-data">
+                    <i>Không có dữ liệu để hiển thị biểu đồ so sánh chỉ số đòn bẩy.</i>
+                </div>
+                {% endif %}
+                
+                <!-- 2.2.5 Efficiency Ratios Chart -->
+                <div class="sub-sub-section-title">2.2.5 Biểu Đồ Chỉ Số Hiệu Quả Hoạt Động</div>
+                {% if efficiency_chart %}
+                <div class="chart-frame">
+                    <div class="chart-title">So sánh chỉ số hiệu quả hoạt động với trung bình ngành</div>
+                    <div class="chart-container">
+                        <img src="data:image/png;base64,{{ efficiency_chart }}" alt="So sánh chỉ số hiệu quả hoạt động" class="chart-image">
+                    </div>
+                    <div class="chart-description">
+                        <p class="small text-muted">Biểu đồ thể hiện sự so sánh về vòng quay tổng tài sản, vòng quay hàng tồn kho, vòng quay khoản phải thu và vòng quay vốn lưu động giữa công ty và trung bình ngành.</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="no-data">
+                    <i>Không có dữ liệu để hiển thị biểu đồ so sánh chỉ số hiệu quả hoạt động.</i>
+                </div>
+                {% endif %}
+                
+        
+                
+                    
+        <!-- Phần 3: Phân Tích Báo Cáo Tài Chính -->
+        <div class="section page-break">
+            <div class="section-title">3. PHÂN TÍCH BÁO CÁO TÀI CHÍNH</div>
+            
+            <div class="sub-section">
+                <div class="sub-section-title">3.1. Kết Quả Kinh Doanh</div>
+                {% if years and years|length > 0 and financial_data %}
+                <table>
+                    <thead>
+                        <tr class="bg-primary">
+                            <th>Chỉ Tiêu (Tỷ VNĐ)</th>
+                            {% for year in years %}
+                            <th class="text-center">{{ year }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Doanh Thu Thuần</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_data.get(year, {}).get('income_statement', {}).get('revenue', 0)/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Lợi Nhuận Gộp</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_data.get(year, {}).get('income_statement', {}).get('gross_profit', 0)/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Lợi Nhuận Từ HĐKD</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_data.get(year, {}).get('income_statement', {}).get('operating_profit', 0)/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Lợi Nhuận Trước Thuế</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_data.get(year, {}).get('income_statement', {}).get('profit_before_tax', 0)/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Lợi Nhuận Sau Thuế</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_data.get(year, {}).get('income_statement', {}).get('net_profit', 0)/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">
+                    <i>Không có dữ liệu kết quả kinh doanh đầy đủ cho công ty này.</i>
+                </div>
+                {% endif %}
+                
+                
+            
+            <div class="sub-section">
+                <div class="sub-section-title">3.2. Cân Đối Kế Toán</div>
+                {% if years and years|length > 0 and financial_data %}
+                <table>
+                    <thead>
+                        <tr class="bg-primary">
+                            <th>Chỉ Tiêu (Tỷ VNĐ)</th>
+                            {% for year in years %}
+                            <th class="text-center">{{ year }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Tổng Tài Sản</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_data.get(year, {}).get('balance_sheet', {}).get('total_assets', 0)/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Tài Sản Ngắn Hạn</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_data.get(year, {}).get('balance_sheet', {}).get('current_assets', 0)/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Tài Sản Dài Hạn</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_data.get(year, {}).get('balance_sheet', {}).get('fixed_assets', 0)/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Nợ Phải Trả</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_data.get(year, {}).get('balance_sheet', {}).get('liabilities', 0)/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Vốn Chủ Sở Hữu</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_data.get(year, {}).get('balance_sheet', {}).get('equity', 0)/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">
+                    <i>Không có dữ liệu cân đối kế toán đầy đủ cho công ty này.</i>
+                </div>
+                {% endif %}
+                
+                
+            
+            <div class="sub-section">
+                <div class="sub-section-title">3.3. Lưu Chuyển Tiền Tệ</div>
+                {% if years and years|length > 0 and financial_data %}
+                <table>
+                    <thead>
+                        <tr class="bg-primary">
+                            <th>Chỉ Tiêu (Tỷ VNĐ)</th>
+                            {% for year in years %}
+                            <th class="text-center">{{ year }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Dòng Tiền Từ HĐKD</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_data.get(year, {}).get('cash_flow', {}).get('operating_cash_flow', 0)/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Dòng Tiền Từ HĐ Đầu Tư</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_data.get(year, {}).get('cash_flow', {}).get('investing_cash_flow', 0)/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Dòng Tiền Từ HĐ Tài Chính</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_data.get(year, {}).get('cash_flow', {}).get('financing_cash_flow', 0)/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Dòng Tiền Thuần</td>
+                            {% for year in years %}
+                            {% set operating = financial_data.get(year, {}).get('cash_flow', {}).get('operating_cash_flow', 0) %}
+                            {% set investing = financial_data.get(year, {}).get('cash_flow', {}).get('investing_cash_flow', 0) %}
+                            {% set financing = financial_data.get(year, {}).get('cash_flow', {}).get('financing_cash_flow', 0) %}
+                            {% set net_cash_flow = operating + investing + financing %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(net_cash_flow/1e9) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">
+                    <i>Không có dữ liệu lưu chuyển tiền tệ đầy đủ cho công ty này.</i>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="summary-box">
+                <div class="summary-title">Nhận Định Tình Hình Tài Chính</div>
+                <p>
+                    {% if years and years|length > 0 and financial_data %}
+                    {% set latest_year = years[-1] %}
+                    {% set earliest_year = years[0] %}
+                    {% set latest_revenue = financial_data.get(latest_year, {}).get('income_statement', {}).get('revenue', 0) %}
+                    {% set earliest_revenue = financial_data.get(earliest_year, {}).get('income_statement', {}).get('revenue', 0) %}
+                    {% set latest_profit = financial_data.get(latest_year, {}).get('income_statement', {}).get('net_profit', 0) %}
+                    {% set earliest_profit = financial_data.get(earliest_year, {}).get('income_statement', {}).get('net_profit', 0) %}
+                    {% set latest_assets = financial_data.get(latest_year, {}).get('balance_sheet', {}).get('total_assets', 0) %}
+                    {% set earliest_assets = financial_data.get(earliest_year, {}).get('balance_sheet', {}).get('total_assets', 0) %}
+                    
+                    {% if earliest_revenue > 0 and earliest_profit > 0 and earliest_assets > 0 %}
+                    {% set revenue_growth = ((latest_revenue - earliest_revenue) / earliest_revenue) * 100 %}
+                    {% set profit_growth = ((latest_profit - earliest_profit) / earliest_profit) * 100 %}
+                    {% set assets_growth = ((latest_assets - earliest_assets) / earliest_assets) * 100 %}
+                    
+                    Từ năm {{ earliest_year }} đến {{ latest_year }}, công ty {{ company_code }} đã có sự biến động về tình hình tài chính như sau:
+                    <ul>
+                        <li>
+                            <strong>Doanh thu thuần</strong> {{ "tăng" if revenue_growth > 0 else "giảm" }} <span class="{{ "positive-change" if revenue_growth > 0 else "negative-change" }}">{{ "%.2f"|format(revenue_growth if revenue_growth >= 0 else -revenue_growth) }}%</span> 
+                            (từ {{ "%.2f"|format(earliest_revenue/1e9) }} tỷ VNĐ lên {{ "%.2f"|format(latest_revenue/1e9) }} tỷ VNĐ).
+                        </li>
+                        <li>
+                            <strong>Lợi nhuận sau thuế</strong> {{ "tăng" if profit_growth > 0 else "giảm" }} <span class="{{ "positive-change" if profit_growth > 0 else "negative-change" }}">{{ "%.2f"|format(profit_growth if profit_growth >= 0 else -profit_growth) }}%</span> 
+                            (từ {{ "%.2f"|format(earliest_profit/1e9) }} tỷ VNĐ lên {{ "%.2f"|format(latest_profit/1e9) }} tỷ VNĐ).
+                        </li>
+                        <li>
+                            <strong>Tổng tài sản</strong> {{ "tăng" if assets_growth > 0 else "giảm" }} <span class="{{ "positive-change" if assets_growth > 0 else "negative-change" }}">{{ "%.2f"|format(assets_growth if assets_growth >= 0 else -assets_growth) }}%</span> 
+                            (từ {{ "%.2f"|format(earliest_assets/1e9) }} tỷ VNĐ lên {{ "%.2f"|format(latest_assets/1e9) }} tỷ VNĐ).
+                        </li>
+                    </ul>
+                    
+                    {% set latest_operating_cf = financial_data.get(latest_year, {}).get('cash_flow', {}).get('operating_cash_flow', 0) %}
+                    {% if latest_profit > 0 and latest_operating_cf > 0 %}
+                    <strong>Dòng tiền từ hoạt động kinh doanh</strong> trong năm {{ latest_year }} là {{ "%.2f"|format(latest_operating_cf/1e9) }} tỷ VNĐ, 
+                    {{ "cao hơn" if latest_operating_cf > latest_profit else "thấp hơn" }} lợi nhuận sau thuế ({{ "%.2f"|format(latest_profit/1e9) }} tỷ VNĐ), 
+                    cho thấy {{ "chất lượng lợi nhuận tốt" if latest_operating_cf > latest_profit else "cần lưu ý về chất lượng lợi nhuận" }}.
+                    {% endif %}
+                    {% else %}
+                    Dữ liệu tài chính của công ty {{ company_code }} có một số khoản mục chưa đầy đủ, do đó không thể phân tích chi tiết xu hướng tài chính qua các năm. Chúng tôi khuyến nghị tham khảo thêm báo cáo tài chính chính thức của công ty hoặc các nguồn thông tin chính thống khác.
+                    {% endif %}
+                    {% else %}
+                    Không có dữ liệu tài chính đầy đủ để phân tích. Điều này có thể do công ty mới niêm yết, chưa công bố đủ báo cáo tài chính, hoặc dữ liệu chưa được cập nhật trong hệ thống.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        
+        <!-- Phần 4: Phân Tích Sâu Các Chỉ Số Quan Trọng -->
+        <div class="section page-break">
+            <div class="section-title">4. PHÂN TÍCH SÂU CÁC CHỈ SỐ QUAN TRỌNG</div>
+            
+            <div class="sub-section">
+                <div class="sub-section-title">4.1. Chỉ Số Sinh Lời</div>
+                {% if years and years|length > 0 and financial_ratios %}
+                <table>
+                    <thead>
+                        <tr class="bg-primary">
+                            <th>Chỉ Tiêu (%)</th>
+                            {% for year in years %}
+                            <th class="text-center">{{ year }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ROA - Tỷ Suất Sinh Lời Trên Tài Sản</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('ROA', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>ROE - Tỷ Suất Sinh Lời Trên Vốn</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('ROE', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>ROS - Tỷ Suất Sinh Lời Trên Doanh Thu</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('ROS', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Tỷ Suất Lợi Nhuận Gộp</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('Gross_Profit_Margin', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>EBIT Margin - Tỷ suất EBIT</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('EBIT_Margin', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>EBITDA Margin - Tỷ suất EBITDA</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('EBITDA_Margin', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">
+                    <i>Không có đủ dữ liệu để tính toán chỉ số sinh lời.</i>
+                </div>
+                {% endif %}
+                
+                
+                
+                <div class="ratio-explanation">
+                    <p>
+                        <strong>Giải thích:</strong><br>
+                        - ROA (Return on Assets): Lợi nhuận sau thuế / Tổng tài sản<br>
+                        - ROE (Return on Equity): Lợi nhuận sau thuế / Vốn chủ sở hữu<br>
+                        - ROS (Return on Sales): Lợi nhuận sau thuế / Doanh thu thuần<br>
+                        - EBIT Margin: EBIT (Lợi nhuận trước lãi vay và thuế) / Doanh thu thuần<br>
+                        - EBITDA Margin: EBITDA (Lợi nhuận trước khấu hao, lãi vay và thuế) / Doanh thu thuần<br>
+                        - Tỷ suất lợi nhuận gộp: Lợi nhuận gộp / Doanh thu thuần
+                    </p>
+                </div>
+            </div>
+            
+            <div class="sub-section">
+                <div class="sub-section-title">4.2. Phân Tích Tăng Trưởng</div>
+                {% if years and years|length > 1 and financial_data %}
+                <table>
+                    <thead>
+                        <tr class="bg-primary">
+                            <th>Chỉ Tiêu (%)</th>
+                            {% for year in years[1:] %}
+                            <th class="text-center">{{ year }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Tăng trưởng doanh thu</td>
+                            {% for i in range(1, years|length) %}
+                            {% set current_year = years[i] %}
+                            {% set prev_year = years[i-1] %}
+                            {% set current_revenue = financial_data.get(current_year, {}).get('income_statement', {}).get('revenue', 0) %}
+                            {% set prev_revenue = financial_data.get(prev_year, {}).get('income_statement', {}).get('revenue', 0) %}
+                            {% set growth_rate = ((current_revenue - prev_revenue) / prev_revenue * 100) if prev_revenue > 0 else 0 %}
+                            <td class="text-right" class="{{ 'positive-change' if growth_rate > 0 else 'negative-change' if growth_rate < 0 else '' }}">
+                                {{ "%.2f"|format(growth_rate) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Tăng trưởng lợi nhuận</td>
+                            {% for i in range(1, years|length) %}
+                            {% set current_year = years[i] %}
+                            {% set prev_year = years[i-1] %}
+                            {% set current_profit = financial_data.get(current_year, {}).get('income_statement', {}).get('net_profit', 0) %}
+                            {% set prev_profit = financial_data.get(prev_year, {}).get('income_statement', {}).get('net_profit', 0) %}
+                            {% set growth_rate = ((current_profit - prev_profit) / prev_profit * 100) if prev_profit > 0 else 0 %}
+                            <td class="text-right" class="{{ 'positive-change' if growth_rate > 0 else 'negative-change' if growth_rate < 0 else '' }}">
+                                {{ "%.2f"|format(growth_rate) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Tăng trưởng tổng tài sản</td>
+                            {% for i in range(1, years|length) %}
+                            {% set current_year = years[i] %}
+                            {% set prev_year = years[i-1] %}
+                            {% set current_assets = financial_data.get(current_year, {}).get('balance_sheet', {}).get('total_assets', 0) %}
+                            {% set prev_assets = financial_data.get(prev_year, {}).get('balance_sheet', {}).get('total_assets', 0) %}
+                            {% set growth_rate = ((current_assets - prev_assets) / prev_assets * 100) if prev_assets > 0 else 0 %}
+                            <td class="text-right" class="{{ 'positive-change' if growth_rate > 0 else 'negative-change' if growth_rate < 0 else '' }}">
+                                {{ "%.2f"|format(growth_rate) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Tăng trưởng vốn chủ sở hữu</td>
+                            {% for i in range(1, years|length) %}
+                            {% set current_year = years[i] %}
+                            {% set prev_year = years[i-1] %}
+                            {% set current_equity = financial_data.get(current_year, {}).get('balance_sheet', {}).get('equity', 0) %}
+                            {% set prev_equity = financial_data.get(prev_year, {}).get('balance_sheet', {}).get('equity', 0) %}
+                            {% set growth_rate = ((current_equity - prev_equity) / prev_equity * 100) if prev_equity > 0 else 0 %}
+                            <td class="text-right" class="{{ 'positive-change' if growth_rate > 0 else 'negative-change' if growth_rate < 0 else '' }}">
+                                {{ "%.2f"|format(growth_rate) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">
+                    <i>Không có đủ dữ liệu để tính toán tỷ lệ tăng trưởng. Cần có dữ liệu của ít nhất 2 năm.</i>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="sub-section">
+                <div class="sub-section-title">4.3. Phân Tích Cơ Cấu Vốn và Thanh Khoản</div>
+                {% if years and years|length > 0 and financial_ratios %}
+                <table>
+                    <thead>
+                        <tr class="bg-primary">
+                            <th>Chỉ Tiêu</th>
+                            {% for year in years %}
+                            <th class="text-center">{{ year }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Tỷ số thanh toán hiện hành (lần)</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('Current_Ratio', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Tỷ số thanh toán nhanh (lần)</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('Quick_Ratio', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Tỷ lệ Nợ/Vốn chủ sở hữu (%)</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('Debt_to_Equity', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Tỷ lệ Nợ/Tổng tài sản (%)</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('Debt_to_Assets', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Khả năng thanh toán lãi vay (lần)</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('Interest_Coverage', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="ratio-explanation">
+                    <p>
+                        <strong>Giải thích:</strong><br>
+                        - Tỷ số thanh toán hiện hành: Tài sản ngắn hạn / Nợ ngắn hạn<br>
+                        - Tỷ số thanh toán nhanh: (Tài sản ngắn hạn - Hàng tồn kho) / Nợ ngắn hạn<br>
+                        - Tỷ lệ Nợ/Vốn chủ sở hữu: (Nợ phải trả / Vốn chủ sở hữu) × 100%<br>
+                        - Tỷ lệ Nợ/Tổng tài sản: (Nợ phải trả / Tổng tài sản) × 100%<br>
+                        - Khả năng thanh toán lãi vay: Lợi nhuận trước lãi vay và thuế (EBIT) / Chi phí lãi vay
+                    </p>
+                </div>
+                {% else %}
+                <div class="no-data">
+                    <i>Không có đủ dữ liệu để phân tích cơ cấu vốn và thanh khoản.</i>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="sub-section">
+                <div class="sub-section-title">4.4. Phân Tích Hiệu Quả Hoạt Động</div>
+                {% if years and years|length > 0 and financial_ratios %}
+                <table>
+                    <thead>
+                        <tr class="bg-primary">
+                            <th>Chỉ Tiêu (lần)</th>
+                            {% for year in years %}
+                            <th class="text-center">{{ year }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Vòng quay tổng tài sản</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('Asset_Turnover', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Vòng quay hàng tồn kho</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('Inventory_Turnover', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Vòng quay khoản phải thu</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('Receivables_Turnover', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Vòng quay vốn lưu động</td>
+                            {% for year in years %}
+                            <td class="text-right">
+                                {{ "%.2f"|format(financial_ratios.get(year, {}).get('Working_Capital_Turnover', 0)) }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="ratio-explanation">
+                    <p>
+                        <strong>Giải thích:</strong><br>
+                        - Vòng quay tổng tài sản: Doanh thu thuần / Tổng tài sản<br>
+                        - Vòng quay hàng tồn kho: Giá vốn hàng bán / Hàng tồn kho trung bình<br>
+                        - Vòng quay khoản phải thu: Doanh thu thuần / Khoản phải thu trung bình<br>
+                        - Vòng quay vốn lưu động: Doanh thu thuần / (Tài sản ngắn hạn - Nợ ngắn hạn)
+                    </p>
+                </div>
+                {% else %}
+                <div class="no-data">
+                    <i>Không có đủ dữ liệu để phân tích hiệu quả hoạt động.</i>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="summary-box">
+                <div class="summary-title">Phân Tích Chỉ Số Tài Chính</div>
+                <p>
+                    {% if financial_ratios and years and years|length > 0 %}
+                    {% set latest_year = years[-1] %}
+                    {% set previous_year = years[-2] if years|length > 1 else None %}
+                    
+                    {% set latest_roa = financial_ratios.get(latest_year, {}).get('ROA', 0) %}
+                    {% set latest_roe = financial_ratios.get(latest_year, {}).get('ROE', 0) %}
+                    {% set latest_ros = financial_ratios.get(latest_year, {}).get('ROS', 0) %}
+                    {% set latest_gpm = financial_ratios.get(latest_year, {}).get('Gross_Profit_Margin', 0) %}
+                    {% set latest_cr = financial_ratios.get(latest_year, {}).get('Current_Ratio', 0) %}
+                    {% set latest_de = financial_ratios.get(latest_year, {}).get('Debt_to_Equity', 0) %}
+                    
+                    {% if previous_year %}
+                    {% set prev_roa = financial_ratios.get(previous_year, {}).get('ROA', 0) %}
+                    {% set prev_roe = financial_ratios.get(previous_year, {}).get('ROE', 0) %}
+                    {% set prev_ros = financial_ratios.get(previous_year, {}).get('ROS', 0) %}
+                    {% set prev_gpm = financial_ratios.get(previous_year, {}).get('Gross_Profit_Margin', 0) %}
+                    {% set prev_cr = financial_ratios.get(previous_year, {}).get('Current_Ratio', 0) %}
+                    {% set prev_de = financial_ratios.get(previous_year, {}).get('Debt_to_Equity', 0) %}
+                    
+                    {% set roa_change = latest_roa - prev_roa %}
+                    {% set roe_change = latest_roe - prev_roe %}
+                    {% set ros_change = latest_ros - prev_ros %}
+                    {% set gpm_change = latest_gpm - prev_gpm %}
+                    {% set cr_change = latest_cr - prev_cr %}
+                    {% set de_change = latest_de - prev_de %}
+                    {% endif %}
+                    
+                    <strong>Khả năng sinh lời:</strong> Công ty {{ company_code }} có ROA là {{ "%.2f"|format(latest_roa) }}%, ROE là {{ "%.2f"|format(latest_roe) }}%, và ROS là {{ "%.2f"|format(latest_ros) }}% trong năm {{ latest_year }}. 
+                    {% if previous_year %}
+                    So với năm {{ previous_year }}, 
+                    {% if roa_change > 0 and roe_change > 0 and ros_change > 0 %}
+                    các chỉ số sinh lời đều <span class="highlight">tăng</span> (ROA +{{ "%.2f"|format(roa_change) }}%, ROE +{{ "%.2f"|format(roe_change) }}%, ROS +{{ "%.2f"|format(ros_change) }}%), cho thấy khả năng sinh lời của công ty đang được cải thiện.
+                    {% elif roa_change < 0 and roe_change < 0 and ros_change < 0 %}
+                    các chỉ số sinh lời đều <span class="highlight">giảm</span> (ROA {{ "%.2f"|format(roa_change) }}%, ROE {{ "%.2f"|format(roe_change) }}%, ROS {{ "%.2f"|format(ros_change) }}%), cho thấy khả năng sinh lời của công ty đang suy giảm.
+                    {% else %}
+                    các chỉ số sinh lời có sự biến động không đồng nhất, cho thấy công ty đang có những thay đổi trong hiệu quả hoạt động.
+                    {% endif %}
+                    {% endif %}
+                    
+                    <br><br>
+                    <strong>Khả năng thanh toán:</strong> Công ty có tỷ số thanh toán hiện hành là {{ "%.2f"|format(latest_cr) }} lần trong năm {{ latest_year }}. 
+                    {% if latest_cr >= 2 %}
+                    Đây là mức <span class="highlight">rất tốt</span>, cho thấy công ty có khả năng thanh toán ngắn hạn dồi dào.
+                    {% elif latest_cr >= 1.5 %}
+                    Đây là mức <span class="highlight">tốt</span>, cho thấy công ty có khả năng thanh toán ngắn hạn ổn định.
+                    {% elif latest_cr >= 1 %}
+                    Đây là mức <span class="highlight">đủ</span>, cho thấy công ty có thể đảm bảo khả năng thanh toán ngắn hạn.
+                    {% else %}
+                    Đây là mức <span class="highlight">thấp</span>, công ty có thể gặp khó khăn trong việc đáp ứng các khoản nợ ngắn hạn.
+                    {% endif %}
+                    
+                    <br><br>
+                    <strong>Cơ cấu vốn:</strong> Tỷ lệ nợ/vốn chủ sở hữu của công ty là {{ "%.2f"|format(latest_de) }}% trong năm {{ latest_year }}. 
+                    {% if latest_de <= 50 %}
+                    Đây là mức <span class="highlight">thấp</span>, cho thấy công ty có cơ cấu vốn an toàn và ít rủi ro tài chính.
+                    {% elif latest_de <= 100 %}
+                    Đây là mức <span class="highlight">vừa phải</span>, cho thấy công ty có cơ cấu vốn tương đối cân đối.
+                    {% elif latest_de <= 150 %}
+                    Đây là mức <span class="highlight">cao</span>, công ty có mức độ đòn bẩy tài chính đáng kể.
+                    {% else %}
+                    Đây là mức <span class="highlight">rất cao</span>, công ty có mức độ đòn bẩy tài chính lớn và có thể đối mặt với rủi ro tài chính cao.
+                    {% endif %}
+                    
+                    <br><br>
+                    <strong>Hiệu quả hoạt động:</strong>
+                    {% if financial_ratios.get(latest_year, {}).get('Asset_Turnover', 0) > 0 %}
+                    Vòng quay tài sản của công ty là {{ "%.2f"|format(financial_ratios.get(latest_year, {}).get('Asset_Turnover', 0)) }} lần trong năm {{ latest_year }}, 
+                    {% if financial_ratios.get(latest_year, {}).get('Asset_Turnover', 0) > 1 %}
+                    cho thấy công ty <span class="highlight">sử dụng tài sản hiệu quả</span> để tạo ra doanh thu.
+                    {% else %}
+                    cho thấy công ty có thể <span class="highlight">cải thiện hiệu quả sử dụng tài sản</span> để tạo ra doanh thu.
+                    {% endif %}
+                    {% endif %}
+                    
+                    {% if financial_ratios.get(latest_year, {}).get('Inventory_Turnover', 0) > 0 %}
+                    Vòng quay hàng tồn kho là {{ "%.2f"|format(financial_ratios.get(latest_year, {}).get('Inventory_Turnover', 0)) }} lần, 
+                    {% if financial_ratios.get(latest_year, {}).get('Inventory_Turnover', 0) > 6 %}
+                    cho thấy <span class="highlight">quản lý hàng tồn kho hiệu quả</span>.
+                    {% else %}
+                    cho thấy có thể <span class="highlight">cải thiện quản lý hàng tồn kho</span>.
+                    {% endif %}
+                    {% endif %}
+                    
+                    {% if financial_ratios.get(latest_year, {}).get('Receivables_Turnover', 0) > 0 %}
+                    Vòng quay khoản phải thu là {{ "%.2f"|format(financial_ratios.get(latest_year, {}).get('Receivables_Turnover', 0)) }} lần, 
+                    {% if financial_ratios.get(latest_year, {}).get('Receivables_Turnover', 0) > 8 %}
+                    cho thấy <span class="highlight">hiệu quả trong việc thu hồi công nợ</span>.
+                    {% else %}
+                    cho thấy công ty có thể <span class="highlight">cải thiện chính sách thu hồi công nợ</span>.
+                    {% endif %}
+                    {% endif %}
+                    {% else %}
+                    Không có đủ dữ liệu để phân tích chi tiết chỉ số tài chính. Vui lòng tham khảo báo cáo tài chính chính thức của công ty để có thông tin đầy đủ.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        
+        <!-- Phần 5: Dự Báo và Khuyến Nghị -->
+        <!-- Phần 5: Dự Báo và Khuyến Nghị -->
+    <!-- Phần 5: Dự Báo và Khuyến Nghị -->
+    <!-- Phần 5: Dự Báo và Khuyến Nghị -->
+    <div class="section page-break">
+        <div class="section-title">5. DỰ BÁO VÀ KHUYẾN NGHỊ</div>
+        
+        <div class="sub-section">
+            <div class="sub-section-title">5.1. Dự Báo Tài Chính</div>
+            
+            {% if financial_forecast and forecast_years %}
+            <table>
+                <thead>
+                    <tr class="bg-primary">
+                        <th>Chỉ Tiêu (Tỷ VNĐ)</th>
+                        {% for year in forecast_years %}
+                        <th class="text-center">{{ year }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Doanh Thu Thuần</td>
+                        {% for year in forecast_years %}
+                        <td class="text-right">
+                            {{ "%.2f"|format(financial_forecast.get(year, {}).get('revenue', 0)/1e9) }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td>Lợi Nhuận Gộp</td>
+                        {% for year in forecast_years %}
+                        <td class="text-right">
+                            {{ "%.2f"|format(financial_forecast.get(year, {}).get('gross_profit', 0)/1e9) }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td>Lợi Nhuận Trước Thuế</td>
+                        {% for year in forecast_years %}
+                        <td class="text-right">
+                            {{ "%.2f"|format(financial_forecast.get(year, {}).get('profit_before_tax', 0)/1e9) }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td>Lợi Nhuận Sau Thuế</td>
+                        {% for year in forecast_years %}
+                        <td class="text-right">
+                            {{ "%.2f"|format(financial_forecast.get(year, {}).get('net_profit', 0)/1e9) }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td>EPS (VNĐ)</td>
+                        {% for year in forecast_years %}
+                        <td class="text-right">
+                            {{ "%.0f"|format(financial_forecast.get(year, {}).get('eps', 0)) }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="chart-frame">
+                <div class="chart-title">Dự báo kết quả kinh doanh</div>
+                <div class="chart-container">
+                    {% if forecast_chart %}
+                    <img src="data:image/png;base64,{{ forecast_chart }}" alt="Dự báo kết quả kinh doanh" class="chart-image">
+                    {% else %}
+                    <div class="no-data">
+                        <i>Không có biểu đồ dự báo.</i>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% else %}
+            <div class="no-data">
+                <i>Không có dữ liệu dự báo tài chính cho công ty này.</i>
+            </div>
+            {% endif %}
+            
+            {% if financial_forecast and forecast_years %}
+            <div class="summary-box">
+                <div class="summary-title">Giả Định Dự Báo</div>
+                <p>
+                    Dự báo tài chính được thực hiện dựa trên các giả định sau:
+                    <ul>
+                        <li>Tốc độ tăng trưởng doanh thu trung bình dự kiến: 
+                            {% if growth_rates and growth_rates.revenue %}
+                            {{ "%.2f"|format(growth_rates.revenue * 100) }}%
+                            {% else %}
+                            5-10%
+                            {% endif %}
+                            /năm
+                        </li>
+                        <li>Tỷ suất lợi nhuận gộp dự kiến duy trì ở mức 
+                            {% if financial_ratios and years %}
+                            {% set latest_year = years[-1] %}
+                            {{ "%.2f"|format(financial_ratios.get(latest_year, {}).get('Gross_Profit_Margin', 0)) }}%
+                            {% else %}
+                            tương đương hiện tại
+                            {% endif %}
+                        </li>
+                        <li>Các yếu tố vĩ mô được giả định ở mức ổn định</li>
+                        <li>Không có thay đổi đột biến về cơ cấu vốn hoặc đầu tư lớn</li>
+                    </ul>
+                    <strong>Lưu ý:</strong> Dự báo này mang tính tham khảo và có thể thay đổi tùy thuộc vào diễn biến thực tế của thị trường và hoạt động kinh doanh của công ty.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="sub-section">
+            <div class="sub-section-title">5.2. Đánh Giá Sức Khỏe Tài Chính</div>
+            
+            {% if financial_health %}
+            <table>
+                <thead>
+                    <tr class="bg-primary">
+                        <th>Khía Cạnh</th>
+                        <th class="text-center">Đánh Giá</th>
+                        <th>Chi Tiết</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Khả năng sinh lời</strong></td>
+                        <td class="text-center">
+                            <span class="{% if financial_health.profitability.score > 0 %}positive-change{% elif financial_health.profitability.score < 0 %}negative-change{% endif %}">
+                                {{ "Tốt" if financial_health.profitability.score > 0 else "Yếu" if financial_health.profitability.score < 0 else "Trung bình" }}
+                            </span>
+                        </td>
+                        <td>
+                            <ul class="mb-0">
+                                {% for detail in financial_health.profitability.details %}
+                                <li>{{ detail }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Thanh khoản</strong></td>
+                        <td class="text-center">
+                            <span class="{% if financial_health.liquidity.score > 0 %}positive-change{% elif financial_health.liquidity.score < 0 %}negative-change{% endif %}">
+                                {{ "Tốt" if financial_health.liquidity.score > 0 else "Yếu" if financial_health.liquidity.score < 0 else "Trung bình" }}
+                            </span>
+                        </td>
+                        <td>
+                            <ul class="mb-0">
+                                {% for detail in financial_health.liquidity.details %}
+                                <li>{{ detail }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cơ cấu vốn</strong></td>
+                        <td class="text-center">
+                            <span class="{% if financial_health.leverage.score > 0 %}positive-change{% elif financial_health.leverage.score < 0 %}negative-change{% endif %}">
+                                {{ "Tốt" if financial_health.leverage.score > 0 else "Yếu" if financial_health.leverage.score < 0 else "Trung bình" }}
+                            </span>
+                        </td>
+                        <td>
+                            <ul class="mb-0">
+                                {% for detail in financial_health.leverage.details %}
+                                <li>{{ detail }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Hiệu quả hoạt động</strong></td>
+                        <td class="text-center">
+                            <span class="{% if financial_health.efficiency.score > 0 %}positive-change{% elif financial_health.efficiency.score < 0 %}negative-change{% endif %}">
+                                {{ "Tốt" if financial_health.efficiency.score > 0 else "Yếu" if financial_health.efficiency.score < 0 else "Trung bình" }}
+                            </span>
+                        </td>
+                        <td>
+                            <ul class="mb-0">
+                                {% for detail in financial_health.efficiency.details %}
+                                <li>{{ detail }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tăng trưởng</strong></td>
+                        <td class="text-center">
+                            <span class="{% if financial_health.growth.score > 0 %}positive-change{% elif financial_health.growth.score < 0 %}negative-change{% endif %}">
+                                {{ "Tốt" if financial_health.growth.score > 0 else "Yếu" if financial_health.growth.score < 0 else "Trung bình" }}
+                            </span>
+                        </td>
+                        <td>
+                            <ul class="mb-0">
+                                {% for detail in financial_health.growth.details %}
+                                <li>{{ detail }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr class="bg-light">
+                        <td><strong>Đánh giá tổng thể</strong></td>
+                        <td class="text-center">
+                            <span class="highlight">{{ financial_health.overall_rating }}</span>
+                        </td>
+                        <td>Điểm: {{ financial_health.overall_score }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">
+                <i>Không có đủ dữ liệu để đánh giá sức khỏe tài chính.</i>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="sub-section">
+            <div class="sub-section-title">5.3. Khuyến Nghị Cải Thiện</div>
+            
+            {% if business_recommendations %}
+            <!-- Priority Level Box -->
+            <div class="summary-box" style="background-color: {{ '#fdf2e9' if business_recommendations.priority == 'Cao' else '#ebf5fb' if business_recommendations.priority == 'Thấp' else '#eaf2e3' }};">
+                <div class="summary-title">Mức Độ Ưu Tiên: <span class="highlight">{{ business_recommendations.priority }}</span></div>
+                <p>{{ business_recommendations.summary }}</p>
+            </div>
+
+            <!-- Strategic Recommendations -->
+            <div class="sub-sub-section-title">5.3.1 Khuyến Nghị Chiến Lược</div>
+            <ul>
+                {% for rec in business_recommendations.strategic %}
+                <li>{{ rec }}</li>
+                {% endfor %}
+            </ul>
+            
+            <!-- Operational Recommendations -->
+            <div class="sub-sub-section-title">5.3.2 Khuyến Nghị Hoạt Động</div>
+            <ul>
+                {% for rec in business_recommendations.operational %}
+                <li>{{ rec }}</li>
+                {% endfor %}
+            </ul>
+            
+            <!-- Financial Recommendations -->
+            <div class="sub-sub-section-title">5.3.3 Khuyến Nghị Tài Chính</div>
+            <ul>
+                {% for rec in business_recommendations.financial %}
+                <li>{{ rec }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="no-data">
+                <i>Không có đủ dữ liệu để đưa ra khuyến nghị cải thiện.</i>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Phần 6: Kết Luận -->
+    <div class="section">
+        <div class="section-title">6. KẾT LUẬN</div>
+        
+        <div class="summary-box">
+            <div class="summary-title">Tóm Tắt Đánh Giá</div>
+            <p>
+                {% if financial_health %}
+                <strong>Tình hình tài chính:</strong> {{ financial_health.summary|safe }}
+                <br><br>
+                <strong>Điểm mạnh:</strong>
+                <ul>
+                    {% for strength in financial_health.strengths %}
+                    <li>{{ strength }}</li>
+                    {% endfor %}
+                </ul>
+                
+                <strong>Điểm yếu:</strong>
+                <ul>
+                    {% for weakness in financial_health.weaknesses %}
+                    <li>{{ weakness }}</li>
+                    {% endfor %}
+                </ul>
+                
+                <strong>Triển vọng tương lai:</strong><br>
+                {% if financial_forecast and forecast_years %}
+                    {% set first_forecast_year = forecast_years[0] %}
+                    {% set last_forecast_year = forecast_years[-1] %}
+                    {% set first_revenue = financial_forecast.get(first_forecast_year, {}).get('revenue', 0) %}
+                    {% set last_revenue = financial_forecast.get(last_forecast_year, {}).get('revenue', 0) %}
+                    {% set revenue_growth = ((last_revenue / first_revenue) - 1) * 100 if first_revenue > 0 else 0 %}
+                    
+                    {% set first_profit = financial_forecast.get(first_forecast_year, {}).get('net_profit', 0) %}
+                    {% set last_profit = financial_forecast.get(last_forecast_year, {}).get('net_profit', 0) %}
+                    {% set profit_growth = ((last_profit / first_profit) - 1) * 100 if first_profit > 0 else 0 %}
+                    
+                    Dựa trên các phân tích và dự báo tài chính, công ty {{ company_code }} được kỳ vọng sẽ 
+                    {% if revenue_growth > 15 and profit_growth > 20 %}
+                    <span class="highlight">tăng trưởng mạnh</span> trong giai đoạn {{ first_forecast_year }}-{{ last_forecast_year }}, với doanh thu dự kiến tăng {{ "%.2f"|format(revenue_growth) }}% và lợi nhuận tăng {{ "%.2f"|format(profit_growth) }}%.
+                    {% elif revenue_growth > 5 and profit_growth > 5 %}
+                    <span class="highlight">tăng trưởng ổn định</span> trong giai đoạn {{ first_forecast_year }}-{{ last_forecast_year }}, với doanh thu dự kiến tăng {{ "%.2f"|format(revenue_growth) }}% và lợi nhuận tăng {{ "%.2f"|format(profit_growth) }}%.
+                    {% elif revenue_growth > 0 and profit_growth > 0 %}
+                    <span class="highlight">duy trì tăng trưởng nhẹ</span> trong giai đoạn {{ first_forecast_year }}-{{ last_forecast_year }}, với doanh thu dự kiến tăng {{ "%.2f"|format(revenue_growth) }}% và lợi nhuận tăng {{ "%.2f"|format(profit_growth) }}%.
+                    <span class="highlight">đối mặt với thách thức</span> trong giai đoạn {{ first_forecast_year }}-{{ last_forecast_year }}, 
+                    với doanh thu dự kiến {{ "tăng" if revenue_growth > 0 else "giảm" }} 
+                    {{ "%.2f"|format(revenue_growth if revenue_growth > 0 else -revenue_growth) }}% 
+                    và lợi nhuận {{ "tăng" if profit_growth > 0 else "giảm" }} 
+                    {{ "%.2f"|format(profit_growth if profit_growth > 0 else -profit_growth) }}%.
+                    <span class="highlight">duy trì ổn định</span> trong giai đoạn {{ first_forecast_year }}-{{ last_forecast_year }} với biến động không đáng kể về doanh thu và lợi nhuận.
+                    {% endif %}
+                {% else %}
+                    Dựa trên các phân tích quá khứ, công ty {{ company_code }} có triển vọng
+                    {% if financial_health.overall_score > 3 %}
+                    <span class="highlight">tích cực</span> với tiềm năng tăng trưởng tốt nhờ vào vị thế tài chính vững mạnh.
+                    {% elif financial_health.overall_score > 0 %}
+                    <span class="highlight">khả quan</span> với cơ hội phát triển bền vững nếu duy trì được các chỉ số tài chính hiện tại.
+                    {% elif financial_health.overall_score > -3 %}
+                    <span class="highlight">thận trọng</span> và cần có biện pháp cải thiện các chỉ số tài chính để đảm bảo sự phát triển bền vững.
+                    {% else %}
+                    <span class="highlight">đáng lo ngại</span> và cần có những thay đổi đáng kể trong chiến lược kinh doanh và quản lý tài chính.
+                    {% endif %}
+                {% endif %}
+                
+                {% if business_recommendations %}
+                <br><br>
+                <strong>Định hướng cải thiện:</strong><br>
+                Để nâng cao hiệu quả hoạt động và đảm bảo sự phát triển bền vững, công ty nên ưu tiên 
+                {{ business_recommendations.strategic[0]|lower if business_recommendations.strategic else "xây dựng chiến lược phát triển phù hợp" }} 
+                và {{ business_recommendations.operational[0]|lower if business_recommendations.operational else "cải thiện hiệu quả hoạt động" }}. 
+                Về mặt tài chính, công ty cần tập trung vào việc 
+                {{ business_recommendations.financial[0]|lower if business_recommendations.financial else "tối ưu hóa cơ cấu vốn và quản lý dòng tiền" }}.
+                {% endif %}
+                
+                {% elif years and years|length > 0 and financial_data %}
+                {% set latest_year = years[-1] %}
+                
+                Dựa trên phân tích tài chính của công ty {{ company_name }} ({{ company_code }}) đến năm {{ latest_year }}, có thể rút ra một số kết luận chính như sau:
+                
+                <strong>Điểm mạnh:</strong>
+                <ul>
+                    {% if company_metrics.get('ROE (%)', 0) > sector_avg.get('Average ROE', 0) %}
+                    <li>Khả năng sinh lời trên vốn chủ sở hữu (ROE) cao hơn trung bình ngành, phản ánh hiệu quả sử dụng vốn tốt.</li>
+                    {% endif %}
+                    
+                    {% if company_metrics.get('Current Ratio', 0) > 1.5 %}
+                    <li>Tỷ số thanh toán hiện hành ở mức an toàn ({{ "%.2f"|format(company_metrics.get('Current Ratio', 0)) }} lần), chứng tỏ khả năng thanh toán ngắn hạn tốt.</li>
+                    {% endif %}
+                    
+                    {% if company_metrics.get('Revenue Growth (%)', 0) > sector_avg.get('Average Revenue Growth', 0) %}
+                    <li>Tăng trưởng doanh thu cao hơn trung bình ngành, thể hiện khả năng mở rộng thị phần.</li>
+                    {% endif %}
+                    
+                    {% if company_metrics.get('D/E (%)', 0) < sector_avg.get('Average D/E Ratio', 0) %}
+                    <li>Tỷ lệ nợ/vốn chủ sở hữu thấp hơn trung bình ngành, giúp giảm rủi ro tài chính.</li>
+                    {% endif %}
+                </ul>
+                
+                <strong>Điểm yếu:</strong>
+                <ul>
+                    {% if company_metrics.get('ROE (%)', 0) < sector_avg.get('Average ROE', 0) %}
+                    <li>Khả năng sinh lời trên vốn chủ sở hữu (ROE) thấp hơn trung bình ngành, cần cải thiện hiệu quả sử dụng vốn.</li>
+                    {% endif %}
+                    
+                    {% if company_metrics.get('Current Ratio', 0) < 1 %}
+                    <li>Tỷ số thanh toán hiện hành thấp ({{ "%.2f"|format(company_metrics.get('Current Ratio', 0)) }} lần), có thể gặp khó khăn trong việc đáp ứng các nghĩa vụ ngắn hạn.</li>
+                    {% endif %}
+                    
+                    {% if company_metrics.get('Revenue Growth (%)', 0) < sector_avg.get('Average Revenue Growth', 0) %}
+                    <li>Tăng trưởng doanh thu chậm hơn trung bình ngành, có thể đang mất thị phần.</li>
+                    {% endif %}
+                    
+                    {% if company_metrics.get('D/E (%)', 0) > sector_avg.get('Average D/E Ratio', 0) %}
+                    <li>Tỷ lệ nợ/vốn chủ sở hữu cao hơn trung bình ngành, tiềm ẩn rủi ro tài chính.</li>
+                    {% endif %}
+                </ul>
+                
+                <strong>Kết luận chung:</strong><br>
+                {% if recommendation %}
+                {{ recommendation.get('conclusion', 'Không có kết luận.') }}
+                {% else %}
+                Công ty {{ company_code }} hiện đang 
+                {% if company_metrics.get('ROE (%)', 0) > sector_avg.get('Average ROE', 0) and company_metrics.get('Revenue Growth (%)', 0) > sector_avg.get('Average Revenue Growth', 0) %}
+                thể hiện kết quả kinh doanh tích cực với khả năng sinh lời và tăng trưởng cao hơn trung bình ngành. Đây là dấu hiệu tốt cho tiềm năng phát triển trong tương lai.
+                {% elif company_metrics.get('ROE (%)', 0) < sector_avg.get('Average ROE', 0) and company_metrics.get('Revenue Growth (%)', 0) < sector_avg.get('Average Revenue Growth', 0) %}
+                đối mặt với một số thách thức trong hoạt động kinh doanh, thể hiện qua khả năng sinh lời và tăng trưởng thấp hơn trung bình ngành. Công ty cần có chiến lược cải thiện hiệu quả hoạt động.
+                {% else %}
+                có kết quả kinh doanh không đồng đều so với trung bình ngành. Công ty cần tập trung vào việc cải thiện các chỉ số còn yếu trong khi phát huy những điểm mạnh hiện có.
+                {% endif %}
+                {% endif %}
+                {% else %}
+                Không có đủ dữ liệu để đưa ra kết luận tổng thể về tình hình tài chính của công ty {{ company_code }}. Khuyến nghị tham khảo thêm các báo cáo tài chính chính thức và các nguồn thông tin đáng tin cậy khác.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>
+            <strong>Lưu ý:</strong> Báo cáo này chỉ mang tính tham khảo và không đưa ra khuyến nghị đầu tư. Nhà đầu tư cần thận trọng và thực hiện phân tích của riêng mình trước khi đưa ra quyết định đầu tư.<br>
+            © {{ report_date.split('-')[2] }} - Báo cáo được tạo tự động dựa trên dữ liệu tài chính.
+        </p>
+    </div>
+</body>
+</html>
