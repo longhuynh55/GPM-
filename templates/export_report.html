@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+
+{% block title %}Xuất Báo Cáo Phân Tích Tài Chính{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<style>
+    .company-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .company-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .report-preview {
+        max-height: 500px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 20px;
+        margin-top: 20px;
+        background-color: #fff;
+    }
+    
+    .feature-icon {
+        font-size: 2rem;
+        color: #0d6efd;
+        margin-bottom: 1rem;
+    }
+    
+    .steps-container {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .step-item {
+        padding: 1.5rem;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        height: 100%;
+        border-left: 4px solid #0d6efd;
+    }
+    
+    .step-number {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        background-color: #0d6efd;
+        color: white;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 30px;
+        margin-right: 10px;
+    }
+    
+    .report-formats {
+        margin-top: 2rem;
+    }
+    
+    .format-card {
+        border: 2px solid #dee2e6;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .format-card.selected {
+        border-color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+    
+    .format-card:hover {
+        border-color: #0d6efd;
+    }
+    
+    .search-area {
+        margin-bottom: 2rem;
+    }
+    
+    #companySearch {
+        border-radius: 5px 0 0 5px;
+    }
+    
+    #searchBtn {
+        border-radius: 0 5px 5px 0;
+    }
+    
+    .company-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .loading-indicator {
+        display: none;
+        text-align: center;
+        margin-top: 20px;
+    }
+    
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Xuất Báo Cáo Phân Tích Tài Chính</h2>
+                <p class="lead text-center">
+                    Tạo báo cáo phân tích tài chính chuyên nghiệp cho doanh nghiệp niêm yết trên thị trường chứng khoán Việt Nam.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Các tính năng của báo cáo -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h5 class="card-title">Phân Tích Tài Chính Toàn Diện</h5>
+                <p class="card-text">
+                    Báo cáo cung cấp phân tích chi tiết về tình hình tài chính, hiệu suất hoạt động, và khả năng sinh lời của doanh nghiệp.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <h5 class="card-title">So Sánh Với Trung Bình Ngành</h5>
+                <p class="card-text">
+                    Đánh giá hiệu suất của doanh nghiệp so với trung bình ngành qua các chỉ số tài chính quan trọng.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <div class="feature-icon">
+                    <i class="fas fa-file-pdf"></i>
+                </div>
+                <h5 class="card-title">Xuất Báo Cáo Chuyên Nghiệp</h5>
+                <p class="card-text">
+                    Xuất báo cáo dưới định dạng PDF chuyên nghiệp, dễ dàng chia sẻ và sử dụng cho các mục đích phân tích.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Các bước thực hiện -->
+<div class="steps-container">
+    <h3 class="text-center mb-4">Các Bước Tạo Báo Cáo</h3>
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="step-item">
+                <h5><span class="step-number">1</span> Chọn Công Ty</h5>
+                <p>Tìm kiếm và chọn công ty bạn muốn phân tích từ danh sách các doanh nghiệp niêm yết.</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="step-item">
+                <h5><span class="step-number">2</span> Xem Trước Báo Cáo</h5>
+                <p>Xem trước nội dung báo cáo để kiểm tra thông tin và kết quả phân tích.</p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="step-item">
+                <h5><span class="step-number">3</span> Xuất Báo Cáo</h5>
+                <p>Chọn định dạng và xuất báo cáo để lưu trữ hoặc chia sẻ với người khác.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tìm kiếm công ty -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Chọn Công Ty</h5>
+    </div>
+    <div class="card-body">
+        <div class="search-area">
+            <div class="input-group">
+                <input type="text" class="form-control" id="companySearch" placeholder="Nhập mã hoặc tên công ty...">
+                <button class="btn btn-primary" type="button" id="searchBtn">
+                    <i class="fas fa-search"></i> Tìm Kiếm
+                </button>
+            </div>
+        </div>
+        
+        <div class="company-grid" id="companyGrid">
+            {% for company in companies %}
+            <div class="card company-card" data-code="{{ company.code }}">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ company.code }}</h5>
+                    <p class="card-text small text-muted">{{ company.name }}</p>
+                    <button class="btn btn-sm btn-outline-primary select-company" data-code="{{ company.code }}">Chọn</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="loading-indicator" id="loadingIndicator">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+            <p class="mt-2">Đang tạo báo cáo, vui lòng đợi...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Định dạng báo cáo -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Chọn Định Dạng Báo Cáo</h5>
+    </div>
+    <div class="card-body">
+        <div class="row report-formats">
+            <div class="col-md-6 mb-3">
+                <div class="card format-card selected" id="htmlFormat">
+                    <div class="card-body text-center">
+                        <h5 class="card-title"><i class="fas fa-file-code"></i> HTML</h5>
+                        <p class="card-text">Xem báo cáo trực tiếp trên trình duyệt</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card format-card" id="pdfFormat">
+                    <div class="card-body text-center">
+                        <h5 class="card-title"><i class="fas fa-file-pdf"></i> PDF</h5>
+                        <p class="card-text">Tải về báo cáo dạng PDF để lưu trữ hoặc in ấn</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <button class="btn btn-primary btn-lg" id="generateReportBtn" disabled>
+                <i class="fas fa-file-export"></i> Tạo Báo Cáo
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+<script>
+    $(document).ready(function() {
+        let selectedCompany = '';
+        let selectedFormat = 'html';
+        
+        // Xử lý tìm kiếm công ty
+        $("#companySearch").on("keyup", function() {
+            const searchText = $(this).val().toLowerCase();
+            $(".company-card").each(function() {
+                const companyCode = $(this).data("code").toLowerCase();
+                const companyName = $(this).find(".card-text").text().toLowerCase();
+                
+                if (companyCode.includes(searchText) || companyName.includes(searchText)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+        
+        // Xử lý khi nhấn tìm kiếm
+        $("#searchBtn").click(function() {
+            $("#companySearch").trigger("keyup");
+        });
+        
+        // Xử lý khi chọn công ty
+        $(".select-company").click(function() {
+            selectedCompany = $(this).data("code");
+            $(".company-card").removeClass("border-primary");
+            $(this).closest(".company-card").addClass("border-primary");
+            $("#generateReportBtn").prop("disabled", false);
+            
+            // Hiển thị thông báo đã chọn
+            alert(`Đã chọn công ty: ${selectedCompany}`);
+        });
+        
+        // Xử lý khi chọn định dạng báo cáo
+        $(".format-card").click(function() {
+            $(".format-card").removeClass("selected");
+            $(this).addClass("selected");
+            
+            if ($(this).attr("id") === "pdfFormat") {
+                selectedFormat = "pdf";
+            } else {
+                selectedFormat = "html";
+            }
+        });
+        
+        // Xử lý khi nhấn tạo báo cáo
+        $("#generateReportBtn").click(function() {
+            if (!selectedCompany) {
+                alert("Vui lòng chọn một công ty trước khi tạo báo cáo!");
+                return;
+            }
+            
+            // Hiển thị loading
+            $("#loadingIndicator").show();
+            
+            // Chuyển hướng đến trang báo cáo
+            const reportUrl = `/generate_report/${selectedCompany}?format=${selectedFormat}`;
+            
+            if (selectedFormat === "pdf") {
+                // Tải file PDF
+                window.location.href = reportUrl;
+                setTimeout(function() {
+                    $("#loadingIndicator").hide();
+                }, 3000);
+            } else {
+                // Mở trang HTML trong tab mới
+                window.open(reportUrl, '_blank');
+                $("#loadingIndicator").hide();
+            }
+        });
+    });
+</script>
+{% endblock %}

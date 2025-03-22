@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}Trang Chủ - Phân Tích Tài Chính{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<style>
+    .feature-icon {
+        font-size: 2.5rem;
+        color: #0d6efd;
+        margin-bottom: 1rem;
+    }
+
+    .feature-card {
+        transition: transform 0.3s;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .info-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .hero-section {
+        background: linear-gradient(to right, #0d6efd, #6610f2);
+        color: white;
+        padding: 50px 20px;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO SECTION -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card hero-section">
+            <div class="card-body text-center">
+                <h2 class="hero-title">Báo Cáo Phân Tích Tài Chính Doanh Nghiệp Niêm Yết</h2>
+                <p class="hero-text">
+                    Phân tích tổng quan các chỉ số tài chính của các doanh nghiệp niêm yết trên thị trường chứng khoán
+                    Việt Nam trong giai đoạn 2020-2024.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SEARCH & ANALYSIS -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card search-panel">
+            <div class="card-body">
+                <form action="/company_analysis" method="get" class="text-center">
+                    <div class="input-group">
+                        <input type="text" class="form-control search-input" id="companySearch" name="code"
+                            placeholder="🔍 Nhập mã cổ phiếu (VD: VNM, FPT)..." required>
+                        <button class="btn btn-primary search-button" type="submit">Tìm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MARKET OVERVIEW -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card feature-card text-center">
+            <div class="card-body">
+                <h5 class="card-title">📊 Tổng Số Ngành</h5>
+                <h2 class="display-4">{{ market_data.sectors_count }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card feature-card text-center">
+            <div class="card-body">
+                <h5 class="card-title">🏢 Tổng Số Doanh Nghiệp</h5>
+                <h2 class="display-4">{{ market_data.total_companies }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ANALYSIS SECTIONS -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card text-center feature-card">
+            <div class="card-body">
+                <h5 class="card-title">📈 Phân Tích Ngành</h5>
+                <p class="card-text">Xem báo cáo chi tiết về các chỉ số tài chính theo từng ngành.</p>
+                <a href="/sector_analysis" class="btn btn-primary">Xem Chi Tiết</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card text-center feature-card">
+            <div class="card-body">
+                <h5 class="card-title">🏦 Phân Tích Công Ty</h5>
+                <p class="card-text">Phân tích chuyên sâu về tình hình tài chính của từng công ty.</p>
+                <a href="/company_analysis" class="btn btn-primary">Xem Chi Tiết</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EXPORT REPORT -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card text-center feature-card">
+            <div class="card-body">
+                <h5 class="card-title">📄 Xuất Báo Cáo PDF</h5>
+                <p class="card-text">Tạo và tải xuống báo cáo phân tích tài chính dạng PDF.</p>
+                <a href="/export_report" class="btn btn-success">Tạo Báo Cáo</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
+<script>
+    $(function () {
+        // Autocomplete cho ô tìm kiếm mã cổ phiếu
+        $("#companySearch").autocomplete({
+            source: function (request, response) {
+                $.ajax({
+                    url: "/api/companies",
+                    dataType: "json",
+                    data: { term: request.term },
+                    success: function (data) {
+                        response(data);
+                    }
+                });
+            },
+            minLength: 1,
+            select: function (event, ui) {
+                $("#companySearch").val(ui.item.value);
+                $(this).closest("form").submit();
+            }
+        }).autocomplete("instance")._renderItem = function (ul, item) {
+            return $("<li>")
+                .append("<div>" + item.label + "</div>")
+                .appendTo(ul);
+        };
+    });
+</script>
+{% endblock %}
+
+
